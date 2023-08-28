@@ -1,0 +1,135 @@
+---
+title: "Flight Delay Case Assignment"
+author: "Meghana Nerusu"
+date: "10-02-2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+<!-- Note:   -->
+
+<!-- These instructions are commented out and will not display when you knit your RMarkdown document. -->
+
+<!-- - Change the information in the yaml header above:  title, author, data. -->
+<!-- - Make sure output is html_document. -->
+<!-- - Once you are finished coding, **run each chunk individually to make sure there are no errors**.  (If necessary fix your code.) Once your code is error-free, click "knit" on the menu above. Your document should compile to HTML, provided that you have output set to "html_document." -->
+<!-- - In the code chunk above ("setup") echo is set to TRUE.  This means that the code in your chunks will be displayed, along with the results, in your compiled document. -->
+
+## Load packages and data
+
+```{r}
+# Load packages
+library(tidyverse) 
+library(ggplot2)
+# Load data
+d <- read_csv("flight_delay_clean.csv")
+d %>% na.omit %>% mutate(delay_indicator = ifelse(delay_indicator ==0, "no","yes"),                    
+          delay_indicator = factor(delay_indicator,levels  = c("no", "yes")),        
+          airline = factor(airline),                                                                                          departure_date = factor(departure_date),
+          origin = factor(origin),
+          destination = factor(destination),
+          scheduled_departure = factor(scheduled_departure),
+          scheduled_arrival = factor(scheduled_flight_length),
+          actual_arrival= factor(actual_arrival),
+          delay = factor(delay),
+          actual_flight_length=factor(actual_flight_length),
+          scheduled_flight_length=factor(scheduled_flight_length),
+          route_code=factor(route_code),
+          day_of_week=factor(day_of_week)) 
+# Inspect data
+glimpse(d)
+summary(d)
+
+```
+
+The dataset has been cleaned for you and is ready for analysis.
+
+## Questions
+
+Lightly comment your code and use pipes for readability.
+
+Most of the questions require some writing.  Please place your text immediately after the ">" in each question, which will make it into a block quote.
+
+Comment briefly on each of the questions, as directed.  Only the the final question requires a lengthier response.
+
+### Q1
+
+Compute the mean, median, 90th percentile, and standard deviation of arrival delay minutes for RegionEx flights. Do the same for MDA flights. Which measure of central tendency would be most appropriate for comparing airline performance?
+
+```{r}
+d %>% 
+  group_by(airline) %>% 
+  summarize(mean = mean(delay),
+            median = median(delay),
+            sd = sd(delay),
+            percentile_90 = quantile(delay, prob = .9))
+
+```
+
+> Based on the output data, median is the best method for measuring the central tendancy of comparing airline performance.
+
+### Q2
+
+Inspect the distribution of RegionEx's arrival delays by constructing a histogram of the number of arrival delay minutes of RegionEx's flights. Do the same for MDA's flights. How do these two distributions compare? Hint:  use facet_wrap().
+
+```{r}
+# facet_wrap
+ggplot(data = d, aes(x = delay)) + 
+  geom_histogram() + 
+  facet_wrap(~ airline) +
+  labs(title = "delay ~ airline")
+```
+
+> After constructing the histogram, we see that RegionEx has more delays, but for less duration where as MDA has less delays when compared to RegionEx Airlines.
+
+### Q3
+
+So far we have considered airline performance in terms of average delay in minutes.  However, the performance metrics, as noted in the case description, also include the percentage of delayed flights.  Let's verify that MDA's COO is correct: does RegionEx have a higher percentage of delayed flights?
+
+Here is code to answer that question:
+
+```{r}
+# Create a summary table of percent delayed by airline.
+d %>% 
+  group_by(airline) %>% 
+  summarize(n = n(),
+  percent_delay = (mean(delay_indicator) * 100) %>% round(1)) 
+```
+
+Note that because `delay_indicator` is numeric (a binary 0/1 variable) calculating the mean of the vector returns the proportion of 1s, which, multiplied by 100, is equivalent to the *percentage* of delayed flights.
+
+Write your own code to create a table summarizing the percentage of delayed flights by airline *and route.*  
+
+```{r}
+  d %>% group_by(airline, route_code) %>% 
+  summarize(n=n(),percent_delay=mean(delay_indicator)*100 %>% round(1))
+```
+
+These tables contain conflicting information. How should you answer the question of whether RegionEx has a higher percentage of delayed flights?  Is the the COO correct?  And, if not, why not?
+
+> As per the above information, RegionEx have higher percentage of delayed flight.So,the COO is correct
+
+### Q4
+
+Compare the scheduled flight durations for the two airlines on each of their four routes. Also compare the actual flight durations for the two airlines. What do you notice? If the two airlines had the same scheduled duration, what impact would this have on their delay records?
+
+```{r}
+d %>% group_by(airline,route_code) %>% 
+  summarize(scheduled_flight_length=mean(scheduled_flight_length),actual_flight_length=mean(actual_flight_length),
+  delay = (actual_flight_length - scheduled_flight_length)*100/ scheduled_flight_length)
+```
+
+> For the mentioned four routes, the scheduled arrival of RegionEx is shorther than the scheduled arrival of MDA but the RegionEx has more delays which results in higher delay percentage where the delays are less for MDA and based on the delay records, there wont be any change.
+
+### Q5
+
+Does the data support the claim that the on‐time performance of RegionEx is worse than that of MDA? Write a paragraph in which you argue a position. In your answer, please incorporate quantitative evidence from the earlier questions.
+
+>Ans. As per the data ,we see that on-time performance of RegioxEx is greater than that of MDA  because the RegionEx airline has lower duration when compared to MDA . Although there are few delays in the regionEx it also have some outliers of higher duration which throw the RegionEx average off but their entire on-time performance is better than MDA on any route.
+
+

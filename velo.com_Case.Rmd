@@ -1,0 +1,99 @@
+---
+title: "velo.com case"
+author: "Meghana Nerusu"
+date: "10-16-2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+```
+## Load data and packages
+
+```{r}
+library(tidyverse)
+v <- read_csv("velo.csv")
+```
+
+### Plot the distribution of `spent` by `checkout_system`.  Below you will use a t-test to compare these distributions statistically.  However, a t-test assumes normally distributed data.  Is that assumption valid in this case?  Why or why not?
+1. You could compare the two distributions using histograms but a density plot works better. (A boxplot is also an option.)
+2. Make sure to include a plot title.
+
+```{r}
+#Density plot
+ggplot(v, aes(x = spent, col = checkout_system))+ geom_density() + labs(title = "Distribution of spent ~ checkout_system")
+```
+
+```{r}
+#Box Plot
+ggplot(v,aes(x=checkout_system,y=spent))+geom_boxplot()+ labs(title = "Distribution of spent ~ checkout_system")
+```
+
+```{r}
+#Histogram Plot
+ggplot(v, aes(x = spent))+ geom_histogram()  +facet_wrap(~checkout_system, ncol = 1) +  labs(title = "Distribution of spent ~ checkout_system")
+```
+> Answer: The bell-shaped probability density plot demonstrates that the two plots are comparable.Because the data is right-skewed and contains large outliers that push the mean upward, the T-test cannot be used in this situation because it assumes a normal distribution. 
+
+### Create a summary table of `spent` by `checkout_system` with the following statistics:
+
+- n
+- mean
+- median
+- standard deviation
+- total 
+- the lower and upper bound of a 95% z-confidence interval for the mean.
+
+Your table should have 2 rows and 8 columns.
+
+```{r}
+v %>% group_by(checkout_system) %>% 
+summarize(n=n(), mean = mean(spent), median = median(spent), sd=sd(spent),
+standarderror = (sd/sqrt(n)) , lowerboundCI = (mean - 1.96 * standarderror) , upperboundCI = (mean + 1.96 * standarderror))
+```
+
+###  Is average spending significantly higher in the treatment group?  (The treatment group consists in the customers using the new checkout system.)  Answer this question using a 2 sample, 2-tailed t-test with alpha set at .05. (Note that these are the default settings for the `t.test()` function when vectors are supplied for the x and y arguments.)
+
+```{r}
+t.test(x=filter(v, checkout_system == "new")$spent, y=filter(v, checkout_system == "old")$spent,
+alternative = c("two.sided"))
+```
+
+> Answer: The hypothesis cannot be refuted because the treatment and control groups spend similarly.The p-value of 0.1536, which is greater than 0.05 (alpha), demonstrates that the treatment group's average spending is not significantly higher.
+
+### Create another summary table of `spent` by `checkout_system` and `device`.  Include these same statistics:
+
+- n
+- mean
+- median
+- standard deviation
+- the lower and upper bound of a 95% confidence interval for the mean.
+
+```{r}
+v %>% group_by(checkout_system,device) %>% 
+summarize(n=n(), mean = mean(spent), median = median(spent), sd=sd(spent),
+standarderror = (sd/sqrt(n)) , lowerboundCI = (mean - 1.96 * standarderror) , upperboundCI = (mean + 1.96 * standarderror))
+```
+
+The table should have 4 rows and 8 columns.  
+
+Based on this information (as well as Sarah's observation, noted in the case description, that the glitch in the checkout system seemed more prevalent for mobile users), an additional statistical comparison of new and old among just mobile users seems warranted. Make that comparison using a 2 sample, 2-tailed t-test with alpha set at .05.  Report your results.
+
+Note that a t-test can only compare two groups.  Therefore, you will need to subset the data before making the comparison.
+
+```{r}
+t.test(x=filter(v, checkout_system == "new" & device == "mobile")$spent, y=filter(v, checkout_system == "old" & device == "mobile")$spent, alternative = c("two.sided"))
+```
+
+> Answer: This suggests that mobile device access to the data has a significant impact and disproves the null hypothesis.Our t.test() returns a p value of 0.01655 that is within the confidence interval, which is bounded by 27.01 and 269.13. The confidence interval has a 95% confidence level.
+
+### What course of action should Sarah recommend to the management at velo.com? Please incorporate your analytic results from above in fashioning an answer.
+
+Based on the preceding findings, Sarah might suggest to management that the new checkout system can be implemented.A p-value of 0.1536 that is greater than alpha which is 0.05 indicates that the data is statistically insignificant and that the null hypothesis is not rejected because they appear to be non-normally distributed throughout the entire data set, which includes both mobile and computer devices.However, a statistical comparison(p.test) of the new and old checkout systems with only mobile users suggests that Sarah's observation that the defect appeared to be more frequent for mobile users is accurate.The data are statistically significant, the null hypothesis is rejected, and the findings are genuine rather than random, as the p-value is 0.01655, which is lower than alpha(0.05).Consequently, the new checkout system might be suggested as a solution to the problem with mobile devices.
+
+ 
+
+
+
+
